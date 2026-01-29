@@ -11,20 +11,83 @@
         <h1>Contact Us</h1>
     </header>
     <main>
-        <form action="https://formspree.io/f/mzdgdroy" method="POST">
-          <label>
-            Your email:
-            <input type="email" name="email">
-          </label>
-  <label>
-    Your message:
-    <textarea name="message"></textarea>
-  </label>
-   <label>Email: <input type="email" name="email" required></label>
-  <button type="submit">Send</button>
-</form>
+      <section class="contact">
+        <form id="contact-form" action="https://formspree.io/f/mzdgdroy" method="POST" novalidate>
+          <input type="hidden" name="_subject" value="Website inquiry">
+          <p class="form-row">
+            <label for="name">Your name</label>
+            <input id="name" name="name" type="text" required placeholder="Jane Doe">
+          </p>
+          <p class="form-row">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required placeholder="you@example.com">
+          </p>
+          <p class="form-row">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="6" required placeholder="How can we help?"></textarea>
+          </p>
+          <!-- honeypot field to reduce spam -->
+          <div style="display:none;" aria-hidden="true">
+            <label>Keep this field empty: <input name="_gotcha"></label>
+          </div>
+          <p class="form-row">
+            <button id="submit-btn" type="submit">Send message</button>
+          </p>
+          <div id="form-status" role="status" aria-live="polite" class="form-status" hidden></div>
+        </form>
+      </section>
     </main>
     <footer>
         <p>&copy; 2026 Gems and Games. All rights reserved.</p>
     </footer>
+    <script>
+    // Client-side submit via Formspree so static GitHub Pages can send messages
+    (function(){
+      const form = document.getElementById('contact-form');
+      const statusEl = document.getElementById('form-status');
+      const submitBtn = document.getElementById('submit-btn');
+
+      function showStatus(message, ok){
+        statusEl.hidden = false;
+        statusEl.textContent = message;
+        statusEl.className = 'form-status ' + (ok ? 'success' : 'error');
+      }
+
+      form.addEventListener('submit', function(ev){
+        ev.preventDefault();
+        if(!form.checkValidity()){
+          form.reportValidity();
+          return;
+        }
+        submitBtn.disabled = true;
+        showStatus('Sending…', true);
+
+        const action = form.getAttribute('action');
+        const data = new FormData(form);
+
+        fetch(action, {
+          method: 'POST',
+          body: data,
+          headers: { 'Accept': 'application/json' }
+        }).then(function(response){
+          submitBtn.disabled = false;
+          if(response.ok){
+            form.reset();
+            showStatus('Thanks — your message was sent!', true);
+          } else {
+            response.json().then(function(json){
+              const err = (json && json.error) ? json.error : 'Failed to send message.';
+              showStatus(err, false);
+            }).catch(function(){
+              showStatus('Failed to send message.', false);
+            });
+          }
+        }).catch(function(){
+          submitBtn.disabled = false;
+          showStatus('Network error — please try again later.', false);
+        });
+      });
+    })();
+    </script>
+</body>
 </html>
