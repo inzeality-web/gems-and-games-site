@@ -52,4 +52,41 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 
+  // Admin reveal shortcut: Ctrl/Cmd + Shift + A shows a temporary admin link
+  function adminShortcut() {
+    if (typeof window === 'undefined') return;
+    let timer = null;
+    function showLink() {
+      if (location.pathname.endsWith('/admin.html') || location.pathname.endsWith('admin.html')) return;
+      if (document.getElementById('secret-admin-link')) return;
+      const a = document.createElement('a');
+      a.id = 'secret-admin-link';
+      a.href = '/admin.html';
+      a.textContent = 'Admin';
+      a.style.position = 'fixed';
+      a.style.right = '12px';
+      a.style.bottom = '12px';
+      a.style.padding = '8px 10px';
+      a.style.background = 'rgba(0,0,0,0.7)';
+      a.style.color = '#fff';
+      a.style.borderRadius = '8px';
+      a.style.zIndex = 9999;
+      a.style.fontSize = '14px';
+      a.style.textDecoration = 'none';
+      document.body.appendChild(a);
+      // remove after 2 minutes
+      timer = setTimeout(()=>{ const el = document.getElementById('secret-admin-link'); if(el) el.remove(); }, 120000);
+    }
+
+    window.addEventListener('keydown', e => {
+      const mod = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key && e.key.toLowerCase() === 'a';
+      if (mod) {
+        showLink();
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', adminShortcut);
+  else adminShortcut();
+
 })();

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin - Gems & Games</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="icon" type="image/x-icon" href="images/favicon.ico.png">
   <style>
     body.admin-page .admin-panel{max-width:980px;margin:24px auto;padding:20px;background:rgba(255,255,255,0.02);border-radius:8px}
     .admin-lock{display:flex;gap:8px;align-items:center;margin:24px auto;max-width:420px}
@@ -53,8 +54,6 @@
         <label class="full">Description<textarea id="description" name="description" rows="3"></textarea></label>
         <div class="full admin-actions">
           <button id="addBtn" class="btn primary" type="submit">Add Product</button>
-          <button id="downloadBtn" type="button" class="btn">Download JSON</button>
-          <button id="copyBtn" type="button" class="btn">Copy JSON</button>
           <button id="clearBtn" type="button" class="btn">Clear All</button>
         </div>
       </form>
@@ -88,8 +87,6 @@
       // Elements
       const form = document.getElementById('productForm');
       const productList = document.getElementById('productList');
-      const downloadBtn = document.getElementById('downloadBtn');
-      const copyBtn = document.getElementById('copyBtn');
       const clearBtn = document.getElementById('clearBtn');
 
       function renderProducts(){
@@ -124,6 +121,9 @@
           alert('Incorrect password');
         }
       });
+
+      // allow Enter key to unlock
+      pwdInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') unlockBtn.click(); });
 
       showBtn.addEventListener('click', ()=>{
         pwdInput.type = pwdInput.type === 'password' ? 'text' : 'password';
@@ -182,20 +182,7 @@
         }
       });
 
-      // download JSON
-      downloadBtn.addEventListener('click', ()=>{
-        const blob = new Blob([JSON.stringify(products, null, 2)], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'products.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-      });
 
-      // copy JSON
-      copyBtn.addEventListener('click', async ()=>{
-        try{
-          await navigator.clipboard.writeText(JSON.stringify(products, null, 2));
-          alert('Copied to clipboard');
-        }catch(err){ alert('Copy failed'); }
-      });
 
       // clear
       clearBtn.addEventListener('click', ()=>{
