@@ -1,3 +1,16 @@
+.pages{max-width:1000px;margin:1.25rem auto;padding:0 1rem;text-align:center}
+.pages-grid{justify-content:center}
+
+/* Prevent accidental horizontal overflow on tiny screens */
+html,body{max-width:100%;overflow-x:hidden}
+
+/* Specific fixes for index page on very small screens */
+@media (max-width: 480px){
+	.pages-grid{padding:0 14px;justify-content:center}
+	.page-card{width:100%;max-width:420px;margin:0 auto}
+	.pages .muted{color:rgba(17,24,39,0.72)}
+}
+
 /* Image gallery styles */
 .image-gallery {
 	display: grid;
