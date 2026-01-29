@@ -326,3 +326,11 @@ body { font-family: Inter, Roboto, system-ui, -apple-system, "Segoe UI", sans-se
 /* Buttons */
 .btn{background:var(--card);border:1px solid #e6e9ef;padding:9px 12px;border-radius:10px;cursor:pointer}
 .btn.primary{background:linear-gradient(90deg,var(--accent),#45d6a6);color:#fff;border:0}
+
+/* Final overrides: ensure index page cards center on very small devices and muted text is readable */
+@media (max-width: 520px) {
+	.pages { padding-left: 12px !important; padding-right: 12px !important; }
+	.pages-grid { justify-content: center !important; padding-left: 0 !important; padding-right: 0 !important; box-sizing: border-box !important; }
+	.pages-grid .page-card { width: 100% !important; max-width: 420px !important; margin-left: auto !important; margin-right: auto !important; }
+	.pages .muted { color: rgba(17,24,39,0.85) !important; }
+}
