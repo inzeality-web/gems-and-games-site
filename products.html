@@ -149,56 +149,106 @@
     </footer>
 
     <script>
-        // Minimal interactive behavior: search, category filter, sort
-        const qs = s => document.querySelector(s);
-        const qInput = qs('#q');
-        const clearBtn = qs('#clear');
-        const grid = qs('#products');
-        const items = Array.from(grid.querySelectorAll('.card'));
-        let sortAsc = true;
+        // Load products from data/products.json and render cards, then attach UI (search/filter/sort)
+        (async function(){
+            const qs = s => document.querySelector(s);
+            const grid = qs('#products');
+            const qInput = qs('#q');
+            const clearBtn = qs('#clear');
+            let items = [];
+            let sortAsc = true;
 
-        function renderFilter(){
-            const q = qInput.value.trim().toLowerCase();
-            items.forEach(card=>{
-                const title = card.dataset.title.toLowerCase();
-                const cat = card.dataset.category.toLowerCase();
-                const matchesQ = !q || title.includes(q) || card.querySelector('.muted').textContent.toLowerCase().includes(q);
-                const catFilter = grid.dataset.catFilter || 'all';
-                const matchesCat = catFilter === 'all' || cat === catFilter;
-                card.style.display = (matchesQ && matchesCat) ? '' : 'none';
-            });
-        }
+            function createCard(product){
+                const art = document.createElement('article');
+                art.className = 'card';
+                art.dataset.title = product.title;
+                art.dataset.category = product.category;
+                art.dataset.price = String(product.price);
 
-        // Category buttons
-        document.querySelectorAll('[data-cat]').forEach(btn=>{
-            btn.addEventListener('click', ()=>{
-                document.querySelectorAll('[data-cat]').forEach(b=>b.classList.remove('primary'));
-                btn.classList.add('primary');
-                grid.dataset.catFilter = btn.dataset.cat;
-                renderFilter();
-            });
-        });
+                art.innerHTML = `
+                    <div class="thumb"><img src="${product.image}" alt="${product.title}"></div>
+                    <div class="meta">
+                        <div>
+                            <div class="title">${product.title}</div>
+                            <div class="cat">${product.category.charAt(0).toUpperCase() + product.category.slice(1)}</div>
+                        </div>
+                        <div class="price">$${Number(product.price).toFixed(2)}</div>
+                    </div>
+                    <div class="muted">${product.description}</div>
+                    <div class="actions">
+                        <button class="btn">Details</button>
+                        <button class="btn primary">Add to cart</button>
+                    </div>
+                `;
+                return art;
+            }
 
-        // Search and clear
-        qInput.addEventListener('input', renderFilter);
-        clearBtn.addEventListener('click', ()=>{ qInput.value=''; renderFilter(); qInput.focus(); });
+            async function loadProducts(){
+                try{
+                    const res = await fetch('data/products.json');
+                    if(!res.ok) throw new Error('No products file');
+                    const list = await res.json();
+                    grid.innerHTML = '';
+                    list.forEach(p => grid.appendChild(createCard(p)));
+                    items = Array.from(grid.querySelectorAll('.card'));
+                    initUI();
+                }catch(err){
+                    // If load fails, fallback to existing DOM children (if any)
+                    items = Array.from(grid.querySelectorAll('.card'));
+                    initUI();
+                }
+            }
 
-        // Sort by price
-        qs('#sortPrice').addEventListener('click', (e)=>{
-            sortAsc = !sortAsc;
-            const sorted = items.slice().sort((a,b)=>{
-                return sortAsc ? (parseFloat(a.dataset.price)-parseFloat(b.dataset.price)) : (parseFloat(b.dataset.price)-parseFloat(a.dataset.price));
-            });
-            sorted.forEach(node => grid.appendChild(node));
-            e.target.textContent = `Sort: Price ${sortAsc ? '↑' : '↓'}`;
-        });
+            function renderFilter(){
+                const q = qInput.value.trim().toLowerCase();
+                items.forEach(card=>{
+                    const title = (card.dataset.title||'').toLowerCase();
+                    const cat = (card.dataset.category||'').toLowerCase();
+                    const matchesQ = !q || title.includes(q) || (card.querySelector('.muted') && card.querySelector('.muted').textContent.toLowerCase().includes(q));
+                    const catFilter = grid.dataset.catFilter || 'all';
+                    const matchesCat = catFilter === 'all' || cat === catFilter;
+                    card.style.display = (matchesQ && matchesCat) ? '' : 'none';
+                });
+            }
 
-        // Year
-        qs('#year').textContent = new Date().getFullYear();
+            function initUI(){
+                // Category buttons
+                document.querySelectorAll('[data-cat]').forEach(btn=>{
+                    btn.addEventListener('click', ()=>{
+                        document.querySelectorAll('[data-cat]').forEach(b=>b.classList.remove('primary'));
+                        btn.classList.add('primary');
+                        grid.dataset.catFilter = btn.dataset.cat;
+                        renderFilter();
+                    });
+                });
 
-        // Init defaults
-        qs('[data-cat="all"]').classList.add('primary');
-        grid.dataset.catFilter = 'all';
+                // Search and clear
+                if(qInput) qInput.addEventListener('input', renderFilter);
+                if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(qInput){ qInput.value=''; renderFilter(); qInput.focus(); } });
+
+                // Sort by price
+                const sortBtn = qs('#sortPrice');
+                if(sortBtn){
+                    sortBtn.addEventListener('click', (e)=>{
+                        sortAsc = !sortAsc;
+                        const sorted = items.slice().sort((a,b)=>{
+                            return sortAsc ? (parseFloat(a.dataset.price)-parseFloat(b.dataset.price)) : (parseFloat(b.dataset.price)-parseFloat(a.dataset.price));
+                        });
+                        sorted.forEach(node => grid.appendChild(node));
+                        e.target.textContent = `Sort: Price ${sortAsc ? '↑' : '↓'}`;
+                    });
+                }
+
+                // Year
+                const yearEl = qs('#year'); if(yearEl) yearEl.textContent = new Date().getFullYear();
+
+                // Init defaults
+                const allBtn = qs('[data-cat="all"]'); if(allBtn) allBtn.classList.add('primary');
+                grid.dataset.catFilter = 'all';
+            }
+
+            await loadProducts();
+        })();
     </script>
 </body>
 </html>
