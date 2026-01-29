@@ -64,6 +64,20 @@
             <button id="reset-btn" class="btn" type="button">Clear list</button>
             <div id="admin-msg" class="small" style="margin-left:auto"></div>
           </div>
+          <div style="margin-top:0.75rem; border-top:1px dashed #e6e9ef; padding-top:0.75rem">
+            <h3>Publish to GitHub</h3>
+            <p class="small">Provide a Personal Access Token (repo scope) to commit `data/products.json` directly to your repository. The token is only used in-memory and not stored.</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+              <input id="gh-owner" placeholder="owner" class="small" style="padding:6px;border-radius:6px;border:1px solid #ddd">
+              <input id="gh-repo" placeholder="repo" class="small" style="padding:6px;border-radius:6px;border:1px solid #ddd">
+              <input id="gh-branch" placeholder="branch (default: main)" class="small" style="padding:6px;border-radius:6px;border:1px solid #ddd">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-top:0.5rem">
+              <input id="gh-token" type="password" placeholder="GitHub PAT" style="padding:6px;border-radius:6px;border:1px solid #ddd;flex:1">
+              <button id="publish-btn" class="btn primary" type="button">Publish to repo</button>
+            </div>
+            <div id="publish-status" class="small" style="margin-top:0.5rem"></div>
+          </div>
 
           <h3 style="margin-top:1rem">Current list</h3>
           <ol id="products-list"></ol>
@@ -172,6 +186,50 @@
       });
 
       resetBtn.addEventListener('click', ()=>{ products = []; renderList(); msg.textContent = 'Cleared'; preview.innerHTML='Preview'; delete preview.dataset.dataurl; pForm.reset(); });
+
+      // Publish to GitHub: create/update data/products.json in given repo using a PAT
+      async function publishToGitHub(token, owner, repo, branch, path, data){
+        const api = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
+        const headers = { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' };
+        // check if file exists to get sha
+        let sha = null;
+        try{
+          const q = await fetch(api + `?ref=${encodeURIComponent(branch)}`, { headers });
+          if(q.ok){
+            const json = await q.json();
+            sha = json.sha;
+          }
+        }catch(e){ /* ignore */ }
+
+        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+        const body = { message: 'Update products.json via admin', content, branch };
+        if(sha) body.sha = sha;
+
+        const res = await fetch(api, { method: 'PUT', headers, body: JSON.stringify(body) });
+        return res;
+      }
+
+      const publishBtn = document.getElementById('publish-btn');
+      publishBtn.addEventListener('click', async ()=>{
+        const owner = document.getElementById('gh-owner').value.trim();
+        const repo = document.getElementById('gh-repo').value.trim();
+        const branch = document.getElementById('gh-branch').value.trim() || 'main';
+        const token = document.getElementById('gh-token').value.trim();
+        const status = document.getElementById('publish-status');
+        if(!owner || !repo || !token){ status.textContent = 'Owner, repo and token required'; return; }
+        if(products.length === 0){ status.textContent = 'Product list is empty'; return; }
+        status.textContent = 'Publishing…';
+        publishBtn.disabled = true;
+        try{
+          const res = await publishToGitHub(token, owner, repo, branch, 'data/products.json', products);
+          if(res.ok){ status.textContent = 'Published successfully — check your repo/branch'; }
+          else {
+            const err = await res.json().catch(()=>null);
+            status.textContent = 'Publish failed: ' + (err && err.message ? err.message : res.statusText);
+          }
+        }catch(e){ status.textContent = 'Publish error: ' + e.message; }
+        publishBtn.disabled = false;
+      });
 
     })();
   </script>
