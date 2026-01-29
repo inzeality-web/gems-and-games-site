@@ -1,0 +1,162 @@
+/* Image gallery styles */
+.image-gallery {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 1rem;
+	align-items: start;
+}
+.gallery-item {
+	background: #fff;
+	border-radius: 6px;
+	padding: 0.5rem;
+	box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+	text-align: center;
+}
+.gallery-item img {
+	max-width: 100%;
+	height: auto;
+	display: block;
+	margin: 0 auto 0.5rem;
+}
+.gallery-item figcaption {
+	font-size: 0.9rem;
+	color: #444;
+}
+
+/* Page background image and overlay */
+html, body {
+	height: 100%;
+	margin: 0;
+}
+
+body {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+	background-image: url("images/background.png");
+	background-size: 100vw 100vh;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+	background-color: #f5f7fb;
+	color: #222;
+}
+
+body::before {
+	content: "";
+	position: fixed;
+	inset: 0;
+	background: rgba(255,255,255,0.35);
+	pointer-events: none;
+	z-index: 0;
+}
+
+/* Ensure main content sits above overlay */
+header, nav, main, footer, .image-gallery {
+	position: relative;
+	z-index: 1;
+}
+
+/* Make footer hug the bottom: allow main to grow */
+main {
+	flex: 1 1 auto;
+}
+
+footer {
+	/* optional footer padding and background */
+	padding: 1rem;
+	background: rgba(255,255,255,0.85);
+	text-align: center;
+}
+
+header {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Nav: horizontal and subtle button feel */
+nav ul {
+	display: flex;
+	gap: 0.5rem;
+	justify-content: center;
+	padding: 0.5rem 1rem;
+	margin: 0;
+	list-style: none;
+}
+nav a {
+	display: inline-block;
+	padding: 0.5rem 0.75rem;
+	border-radius: 6px;
+	text-decoration: none;
+	color: inherit;
+	background: rgba(255,255,255,0.6);
+	transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+nav a:hover,
+nav a:focus {
+	transform: translateY(-3px);
+	box-shadow: 0 6px 14px rgba(16,24,40,0.08);
+	background: rgba(255,255,255,0.9);
+}
+
+/* Pages grid: card-style links */
+.pages {
+	max-width: 1000px;
+	margin: 1.25rem auto;
+	padding: 0 1rem;
+}
+.pages-grid {
+	display: flex;
+	gap: 1.75rem;
+	justify-content: center;
+	align-items: stretch;
+	flex-wrap: wrap; /* allow wrapping into multiple columns on wide viewports */
+	padding-bottom: 0.25rem;
+}
+.page-card {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	padding: 1.25rem;
+	border-radius: 10px;
+	background: rgba(255,255,255,0.72);
+	color: #111;
+	text-decoration: none;
+	box-shadow: 0 6px 18px rgba(16,24,40,0.06);
+	transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease;
+	flex: 0 1 260px; /* allow shrinking/growing but prefer ~260px */
+	min-width: 220px;
+}
+
+/* On narrow screens, stack cards vertically */
+@media (max-width: 640px) {
+	.pages-grid {
+		flex-direction: column;
+		align-items: center;
+	}
+	.page-card {
+		flex: none;
+		width: 100%;
+		max-width: 420px;
+	}
+}
+.page-card:hover,
+.page-card:focus {
+	transform: translateY(-6px);
+	box-shadow: 0 18px 40px rgba(16,24,40,0.12);
+}
+.card-icon {
+	font-size: 2rem;
+	margin-bottom: 0.5rem;
+}
+.page-card h3 {
+	margin: 0.25rem 0 0.5rem;
+}
+.page-card p {
+	margin: 0;
+	font-size: 0.95rem;
+	color: #444;
+}
