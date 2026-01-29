@@ -41,7 +41,8 @@
         <label class="full">Title<input id="title" name="title" required></label>
         <label>Category<input id="category" name="category" value="stones"></label>
         <label>Price<input id="price" name="price" type="number" step="0.01" value="0.00"></label>
-        <label class="full">Image URL<input id="image" name="image" placeholder="images/placeholder-photo.svg"></label>
+        <label class="full">Image File<input id="imageFile" name="imageFile" type="file" accept="image/*"></label>
+        <div class="full"><img id="imagePreview" alt="Preview" style="max-height:80px;display:block;margin-top:6px"></div>
         <label class="full">Description<textarea id="description" name="description" rows="3"></textarea></label>
         <div class="full admin-actions">
           <button id="addBtn" class="btn primary" type="submit">Add Product</button>
@@ -125,18 +126,41 @@
       // Add product
       form.addEventListener('submit', e=>{
         e.preventDefault();
-        const p = {
-          title: document.getElementById('title').value.trim() || 'Untitled',
-          category: document.getElementById('category').value.trim() || 'misc',
-          price: Number(document.getElementById('price').value) || 0,
-          image: document.getElementById('image').value.trim() || 'images/placeholder-photo.svg',
-          description: document.getElementById('description').value.trim() || ''
-        };
-        products.unshift(p);
-        renderProducts();
-        // notify server/clients
-        if(socket) socket.emit('addProduct', p);
-        form.reset();
+        const fileInput = document.getElementById('imageFile');
+        const file = fileInput.files && fileInput.files[0];
+
+        function createAndSend(dataUrl){
+          const p = {
+            title: document.getElementById('title').value.trim() || 'Untitled',
+            category: document.getElementById('category').value.trim() || 'misc',
+            price: Number(document.getElementById('price').value) || 0,
+            image: dataUrl || 'images/placeholder-photo.svg',
+            description: document.getElementById('description').value.trim() || ''
+          };
+          products.unshift(p);
+          renderProducts();
+          if(socket) socket.emit('addProduct', p);
+          form.reset();
+          document.getElementById('imagePreview').src = '';
+        }
+
+        if(file){
+          const reader = new FileReader();
+          reader.onload = ()=> createAndSend(reader.result);
+          reader.readAsDataURL(file);
+        } else {
+          createAndSend(null);
+        }
+      });
+
+      // preview selected image
+      document.getElementById('imageFile').addEventListener('change', e=>{
+        const f = e.target.files && e.target.files[0];
+        const img = document.getElementById('imagePreview');
+        if(!f){ img.src = ''; return; }
+        const r = new FileReader();
+        r.onload = ()=> img.src = r.result;
+        r.readAsDataURL(f);
       });
 
       // remove handler
