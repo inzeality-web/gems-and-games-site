@@ -170,14 +170,14 @@
         r.readAsDataURL(f);
       });
 
-      // remove handler
+      // remove handler - emit removeProduct (server will remove first matching title)
       productList.addEventListener('click', e=>{
         if(e.target.classList.contains('remove')){
           const i = Number(e.target.getAttribute('data-i'));
           if(!Number.isNaN(i)){
-            products.splice(i,1);
+            const removed = products.splice(i,1)[0];
             renderProducts();
-            if(socket) socket.emit('products', products);
+            if(socket && removed){ socket.emit('removeProduct', removed.title); }
           }
         }
       });
@@ -202,7 +202,7 @@
         if(confirm('Clear all products from this admin session?')){
           products = [];
           renderProducts();
-          if(socket) socket.emit('products', products);
+          if(socket) socket.emit('clearProducts');
         }
       });
 

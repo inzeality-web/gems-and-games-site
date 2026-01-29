@@ -79,11 +79,25 @@ io.on('connection', socket => {
     }catch(e){ console.error(e); }
   });
 
-  socket.on('products', list => {
-    if(Array.isArray(list)){
-      writeProducts(list);
-      io.emit('products', list);
-    }
+  // Remove a product by title (first match)
+  socket.on('removeProduct', identifier => {
+    try{
+      const list = readProducts();
+      const idx = list.findIndex(p => p.title === identifier || p.title === (identifier && identifier.title));
+      if(idx >= 0){
+        list.splice(idx,1);
+        writeProducts(list);
+        io.emit('products', list);
+      }
+    }catch(e){ console.error(e); }
+  });
+
+  // Clear all products (admin)
+  socket.on('clearProducts', ()=>{
+    try{
+      writeProducts([]);
+      io.emit('products', []);
+    }catch(e){ console.error(e); }
   });
 });
 

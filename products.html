@@ -4,114 +4,132 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <title>Products — Gems & Games</title>
-            <link rel="stylesheet" href="styles.css">
-            <link rel="icon" type="image/x-icon" href="images/favicon.ico.png">
+            <script>
+                // Load products and manage UI with proper re-rendering on socket updates
+                (function(){
+                    const qs = s => document.querySelector(s);
+                    const grid = qs('#products');
+                    const qInput = qs('#q');
+                    const clearBtn = qs('#clear');
+                    let items = [];
+                    let sortAsc = true;
+                    let uiSetup = false;
+
+                    function createCard(product){
+                        const art = document.createElement('article');
+                        art.className = 'card';
+                        art.dataset.title = product.title || '';
+                        art.dataset.category = (product.category||'').toLowerCase();
+                        art.dataset.price = String(product.price || 0);
+
+                        art.innerHTML = `
+                            <div class="thumb"><img src="${product.image}" alt="${product.title}"></div>
+                            <div class="meta">
+                                <div>
+                                    <div class="title">${product.title}</div>
+                                    <div class="cat">${(product.category||'').charAt(0).toUpperCase() + (product.category||'').slice(1)}</div>
+                                </div>
+                                <div class="price">$${Number(product.price||0).toFixed(2)}</div>
+                            </div>
+                            <div class="muted">${product.description || ''}</div>
+                            <div class="actions">
+                                <button class="btn">Details</button>
+                                <button class="btn primary">Add to cart</button>
+                            </div>
+                        `;
+                        return art;
+                    }
+
+                    function renderProducts(list){
+                        grid.innerHTML = '';
+                        (list || []).forEach(p => grid.appendChild(createCard(p)));
+                        items = Array.from(grid.querySelectorAll('.card'));
+                        // after re-render, apply current filters/sort
+                        renderFilter();
+                    }
+
+                    function renderFilter(){
+                        const q = (qInput && qInput.value || '').trim().toLowerCase();
+                        items.forEach(card=>{
+                            const title = (card.dataset.title||'').toLowerCase();
+                            const cat = (card.dataset.category||'').toLowerCase();
+                            const matchesQ = !q || title.includes(q) || (card.querySelector('.muted') && card.querySelector('.muted').textContent.toLowerCase().includes(q));
+                            const catFilter = grid.dataset.catFilter || 'all';
+                            const matchesCat = catFilter === 'all' || cat === catFilter;
+                            card.style.display = (matchesQ && matchesCat) ? '' : 'none';
+                        });
+                    }
+
+                    function setupUI(){
+                        if(uiSetup) return; uiSetup = true;
+                        // Category buttons
+                        document.querySelectorAll('[data-cat]').forEach(btn=>{
+                            btn.addEventListener('click', ()=>{
+                                document.querySelectorAll('[data-cat]').forEach(b=>b.classList.remove('primary'));
+                                btn.classList.add('primary');
+                                grid.dataset.catFilter = btn.dataset.cat;
+                                renderFilter();
+                            });
+                        });
+
+                        // Search and clear
+                        if(qInput) qInput.addEventListener('input', renderFilter);
+                        if(clearBtn) clearBtn.addEventListener('click', ()=>{ if(qInput){ qInput.value=''; renderFilter(); qInput.focus(); } });
+
+                        // Sort by price
+                        const sortBtn = qs('#sortPrice');
+                        if(sortBtn){
+                            sortBtn.addEventListener('click', (e)=>{
+                                sortAsc = !sortAsc;
+                                // sort visible items only
+                                const visible = items.filter(i=> i.style.display !== 'none');
+                                const sorted = visible.slice().sort((a,b)=>{
+                                    return sortAsc ? (parseFloat(a.dataset.price)-parseFloat(b.dataset.price)) : (parseFloat(b.dataset.price)-parseFloat(a.dataset.price));
+                                });
+                                // append sorted nodes in order
+                                sorted.forEach(node => grid.appendChild(node));
+                                e.target.textContent = `Sort: Price ${sortAsc ? '↑' : '↓'}`;
+                            });
+                        }
+
+                        // Year
+                        const yearEl = qs('#year'); if(yearEl) yearEl.textContent = new Date().getFullYear();
+
+                        // Init defaults
+                        const allBtn = qs('[data-cat="all"]'); if(allBtn) allBtn.classList.add('primary');
+                        grid.dataset.catFilter = 'all';
+                    }
+
+                    // initial load
+                    (async function load(){
+                        try{
+                            const res = await fetch('data/products.json');
+                            if(res.ok){
+                                const list = await res.json();
+                                renderProducts(list);
+                            } else {
+                                items = Array.from(grid.querySelectorAll('.card'));
+                            }
+                        }catch(e){ items = Array.from(grid.querySelectorAll('.card')); }
+                        setupUI();
+                    })();
+
+                    // Socket updates: re-render products when server broadcasts
+                    if(typeof io !== 'undefined'){
+                        try{
+                            const socket = io();
+                            socket.on('products', list => {
+                                renderProducts(list || []);
+                            });
+                        }catch(e){ console.warn('socket init failed', e); }
+                    }
+
+                })();
+            </script>
+
             <script src="/socket.io/socket.io.js"></script>
-</head>
-<body>
-    <header class="site-header">
-        <div class="brand">
-            <div class="logo">G&G</div>
-            <div>
-                <div style="font-size:15px">Gems & Games</div>
-                <div style="font-size:12px;color:var(--muted);margin-top:2px">Curated finds for players & collectors</div>
-            </div>
-        </div>
-        <nav aria-label="Main navigation">
-            <a href="index.html">Home</a>
-            <a href="products.html" aria-current="page">Products</a>
-            <a href="about.html">About</a>
-            <a href="business.html">The Business</a>
-            <a href="gallery.html">Gallery</a>
-            <a href="contact.html">Contact</a>
-        </nav>
-    </header>
-
-    <main>
-        <section aria-label="Products header">
-            <h1>Products</h1>
-            <p class="muted">Browse gems and games — filter, search, and add to cart.</p>
-        </section>
-
-        <section class="controls" aria-label="Controls">
-            <div class="search" role="search">
-                <input id="q" type="search" placeholder="Search products, tags, materials..." />
-                <button id="clear" class="btn" title="Clear search">Clear</button>
-            </div>
-            <div class="filters" role="toolbar" aria-label="Filters">
-                <button class="btn" data-cat="all">All</button>
-                <button class="btn" data-cat="gems">Gems</button>
-                <button class="btn" data-cat="games">Games</button>
-                <button class="btn primary" id="sortPrice">Sort: Price ↑</button>
-            </div>
-        </section>
-
-        <section class="grid" id="products" aria-live="polite">
-            <!-- Product template items -->
-            <article class="card" data-title="Amethyst Cluster" data-category="gems" data-price="42.00">
-                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Amethyst" alt="Amethyst cluster" /></div>
-                <div class="meta">
-                    <div>
-                        <div class="title">Amethyst Cluster</div>
-                        <div class="cat">Gems • Natural</div>
-                    </div>
-                    <div class="price">$42.00</div>
-                </div>
-                <div class="muted">Hand-selected piece, great for display and energy work.</div>
-                <div class="actions">
-                    <button class="btn">Details</button>
-                    <button class="btn primary">Add to cart</button>
-                </div>
-            </article>
-
-            <article class="card" data-title="Crystal Dice Set" data-category="games" data-price="29.00">
-                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Dice+Set" alt="Crystal dice set" /></div>
-                <div class="meta">
-                    <div>
-                        <div class="title">Crystal Dice Set</div>
-                        <div class="cat">Games • Accessories</div>
-                    </div>
-                    <div class="price">$29.00</div>
-                </div>
-                <div class="muted">7-piece polyhedral set with shimmer finish.</div>
-                <div class="actions">
-                    <button class="btn">Details</button>
-                    <button class="btn primary">Add to cart</button>
-                </div>
-            </article>
-
-            <article class="card" data-title="Fluorite Tower" data-category="gems" data-price="58.00">
-                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Fluorite" alt="Fluorite tower" /></div>
-                <div class="meta">
-                    <div>
-                        <div class="title">Fluorite Tower</div>
-                        <div class="cat">Gems • Carved</div>
-                    </div>
-                    <div class="price">$58.00</div>
-                </div>
-                <div class="muted">Polished tower ideal for desks and shelves.</div>
-                <div class="actions">
-                    <button class="btn">Details</button>
-                    <button class="btn primary">Add to cart</button>
-                </div>
-            </article>
-
-            <article class="card" data-title="Handcrafted Board Game" data-category="games" data-price="85.00">
-                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Board+Game" alt="Handcrafted board game" /></div>
-                <div class="meta">
-                    <div>
-                        <div class="title">Handcrafted Board Game</div>
-                        <div class="cat">Games • Tabletop</div>
-                    </div>
-                    <div class="price">$85.00</div>
-                </div>
-                <div class="muted">Limited-run strategy game with wooden pieces.</div>
-                <div class="actions">
-                    <button class="btn">Details</button>
-                    <button class="btn primary">Add to cart</button>
-                </div>
-            </article>
-
+        </body>
+        </html>
             <article class="card" data-title="Rose Quartz Heart" data-category="gems" data-price="18.00">
                 <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Rose+Quartz" alt="Rose quartz heart" /></div>
                 <div class="meta">
