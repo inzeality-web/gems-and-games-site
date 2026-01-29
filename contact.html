@@ -54,54 +54,71 @@
     <footer>
         <p>&copy; 2026 Gems and Games. All rights reserved.</p>
     </footer>
-    <script>
-    // Client-side submit via Formspree so static GitHub Pages can send messages
-    (function(){
-      const form = document.getElementById('contact-form');
-      const statusEl = document.getElementById('form-status');
-      const submitBtn = document.getElementById('submit-btn');
+      <script>
+      // Client-side submit via Formspree so static GitHub Pages can send messages
+      (function(){
+        const form = document.getElementById('contact-form');
+        const statusEl = document.getElementById('form-status');
+        const submitBtn = document.getElementById('submit-btn');
 
-      function showStatus(message, ok){
-        statusEl.hidden = false;
-        statusEl.textContent = message;
-        statusEl.className = 'form-status ' + (ok ? 'success' : 'error');
-      }
-
-      form.addEventListener('submit', function(ev){
-        ev.preventDefault();
-        if(!form.checkValidity()){
-          form.reportValidity();
-          return;
+        function showStatus(message, ok){
+          statusEl.hidden = false;
+          statusEl.textContent = message;
+          statusEl.className = 'form-status ' + (ok ? 'success' : 'error');
         }
-        submitBtn.disabled = true;
-        showStatus('Sending…', true);
 
-        const action = form.getAttribute('action');
-        const data = new FormData(form);
-
-        fetch(action, {
-          method: 'POST',
-          body: data,
-          headers: { 'Accept': 'application/json' }
-        }).then(function(response){
-          submitBtn.disabled = false;
-          if(response.ok){
-            form.reset();
-            showStatus('Thanks — your message was sent!', true);
-          } else {
-            response.json().then(function(json){
-              const err = (json && json.error) ? json.error : 'Failed to send message.';
-              showStatus(err, false);
-            }).catch(function(){
-              showStatus('Failed to send message.', false);
-            });
+        form.addEventListener('submit', function(ev){
+          ev.preventDefault();
+          if(!form.checkValidity()){
+            form.reportValidity();
+            return;
           }
-        }).catch(function(){
-          submitBtn.disabled = false;
-          showStatus('Network error — please try again later.', false);
+          submitBtn.disabled = true;
+          showStatus('Sending…', true);
+
+          const action = form.getAttribute('action');
+          const data = new FormData(form);
+
+          fetch(action, {
+            method: 'POST',
+            body: data,
+            headers: { 'Accept': 'application/json' }
+          }).then(function(response){
+            submitBtn.disabled = false;
+            if(response.ok){
+              form.reset();
+              showStatus('Thanks — your message was sent!', true);
+            } else {
+              response.json().then(function(json){
+                const err = (json && json.error) ? json.error : 'Failed to send message.';
+                showStatus(err, false);
+              }).catch(function(){
+                showStatus('Failed to send message.', false);
+              });
+            }
+          }).catch(function(){
+            submitBtn.disabled = false;
+            showStatus('Network error — please try again later.', false);
+          });
         });
-      });
-    })();
-    </script>
-</body>
+      })();
+      </script>
+      <script src="/socket.io/socket.io.js"></script>
+      <script>
+        (function(){
+          const grid = document.querySelector('#products');
+          const list = document.querySelector('#productList');
+          if(!grid && !list) return;
+          try{
+            const socket = io();
+            socket.on('products', products => {
+              if(grid){ grid.innerHTML=''; products.forEach(p=>{ const art=document.createElement('article'); art.className='card'; art.innerHTML = `<div class="thumb"><img src="${p.image}" alt="${p.title}"></div><div class="meta"><div><div class="title">${p.title}</div><div class="cat">${p.category}</div></div><div class="price">$${Number(p.price).toFixed(2)}</div></div><div class="muted">${p.description}</div><div class="actions"><button class="btn">Details</button><button class="btn primary">Add to cart</button></div>`; grid.appendChild(art); }); }
+              if(list){ list.innerHTML=''; products.forEach(p=>{ const li=document.createElement('div'); li.className='product-item'; li.innerHTML=`<strong>${p.title}</strong> — $${Number(p.price).toFixed(2)} | ${p.category}`; list.appendChild(li); }); }
+            });
+          }catch(e){}
+        })();
+      </script>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="scripts/live-products.js"></script>
 </html>

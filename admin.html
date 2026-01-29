@@ -1,237 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Admin — Add Product</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin - Gems & Games</title>
   <link rel="stylesheet" href="styles.css">
-  <style>
-    .admin { max-width:900px; margin:2rem auto; padding:1rem; }
-    .admin form { background: rgba(255,255,255,0.95); padding:1rem; border-radius:10px; box-shadow:0 8px 24px rgba(16,24,40,0.06);} 
-    .row { display:flex; gap:1rem; align-items:center; }
-    .preview { width:200px; height:150px; border-radius:8px; background:#f3f4f6; display:flex;align-items:center;justify-content:center; overflow:hidden; }
-    .small { font-size:0.95rem; color:#555 }
-    .danger { color:#b91c1c }
-    .hidden { display:none }
-  </style>
-</head>
-<body>
-  <header class="site-header">
-    <div class="brand"><div class="logo">G&G</div><div><div style="font-size:15px">Gems & Games</div><div style="font-size:12px;margin-top:2px" class="muted">Admin</div></div></div>
-    <nav aria-label="Main navigation"><a href="index.html">Home</a><a href="products.html">Products</a></nav>
-  </header>
-
-  <main>
-    <section class="admin">
-      <h1>Admin — Add Product</h1>
-      <p class="small">This admin is client-side only. It creates a `products.json` you can download and commit to the repo. Do not rely on this for strong security.</p>
-
-      <div id="login-box">
-        <label class="small">Password: <input id="admin-pass" type="password"></label>
-        <button id="login-btn" class="btn">Unlock</button>
-        <p class="small">Default password is <strong>ownerpass</strong>. Change it in the file after unlocking.</p>
-      </div>
-
-      <div id="admin-ui" class="hidden">
-        <form id="product-form">
-          <div class="row">
-            <div style="flex:1">
-              <label>Product name<br><input id="p-title" name="title" required placeholder="Amethyst Cluster"></label>
-            </div>
-            <div style="width:160px">
-              <label>Category<br><input id="p-category" name="category" required placeholder="gems"></label>
-            </div>
-          </div>
-
-          <div style="margin-top:0.75rem" class="row">
-            <div style="flex:1">
-              <label>Price (USD)<br><input id="p-price" name="price" type="number" step="0.01" required placeholder="42.00"></label>
-            </div>
-            <div>
-              <label>Image file<br><input id="p-image" name="image" type="file" accept="image/*"></label>
-            </div>
-            <div class="preview" id="img-preview">Preview</div>
-          </div>
-
-          <div style="margin-top:0.75rem">
-            <label>Description<br><textarea id="p-desc" rows="4" required placeholder="Short product description"></textarea></label>
-          </div>
-
-          <div style="margin-top:0.75rem; display:flex; gap:8px; align-items:center">
-            <button id="add-btn" class="btn primary" type="button">Add to list</button>
-            <button id="download-btn" class="btn" type="button">Download products.json</button>
-            <button id="copy-btn" class="btn" type="button">Copy JSON</button>
-            <button id="reset-btn" class="btn" type="button">Clear list</button>
-            <div id="admin-msg" class="small" style="margin-left:auto"></div>
-          </div>
-          <div style="margin-top:0.75rem; border-top:1px dashed #e6e9ef; padding-top:0.75rem">
-            <h3>Publish to GitHub</h3>
-            <p class="small">Provide a Personal Access Token (repo scope) to commit `data/products.json` directly to your repository. The token is only used in-memory and not stored.</p>
-            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-              <input id="gh-owner" placeholder="owner" class="small" style="padding:6px;border-radius:6px;border:1px solid #ddd">
-              <input id="gh-repo" placeholder="repo" class="small" style="padding:6px;border-radius:6px;border:1px solid #ddd">
-              <input id="gh-branch" placeholder="branch (default: main)" class="small" style="padding:6px;border-radius:6px;border:1px solid #ddd">
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;margin-top:0.5rem">
-              <input id="gh-token" type="password" placeholder="GitHub PAT" style="padding:6px;border-radius:6px;border:1px solid #ddd;flex:1">
-              <button id="publish-btn" class="btn primary" type="button">Publish to repo</button>
-            </div>
-            <div id="publish-status" class="small" style="margin-top:0.5rem"></div>
-          </div>
-
-          <h3 style="margin-top:1rem">Current list</h3>
-          <ol id="products-list"></ol>
-        </form>
-      </div>
-
-    </section>
+  <script src="/socket.io/socket.io.js"></script>
+  
+  </footer>
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="scripts/live-products.js"></script>
+</html>
   </main>
 
-  <footer>
-    <p>&copy; 2026 Gems & Games</p>
-  </footer>
-
   <script>
-    // Simple client-side admin. This is NOT secure. It's intended for owner convenience.
-    (function(){
-      const ADMIN_PASSWORD = 'ownerpass'; // change this hardcoded password in the file
-      const loginBtn = document.getElementById('login-btn');
-      const passInput = document.getElementById('admin-pass');
-      const adminUI = document.getElementById('admin-ui');
-      const loginBox = document.getElementById('login-box');
-      const msg = document.getElementById('admin-msg');
+    const socket = io(); // connect to your Express + Socket.IO server
+    const form = document.getElementById('productForm');
+    const productList = document.getElementById('productList');
 
-      const pForm = document.getElementById('product-form');
-      const imgInput = document.getElementById('p-image');
-      const preview = document.getElementById('img-preview');
-      const addBtn = document.getElementById('add-btn');
-      const downloadBtn = document.getElementById('download-btn');
-      const copyBtn = document.getElementById('copy-btn');
-      const listEl = document.getElementById('products-list');
-      const resetBtn = document.getElementById('reset-btn');
-
-      let products = [];
-
-      loginBtn.addEventListener('click', ()=>{
-        if(passInput.value === ADMIN_PASSWORD){
-          loginBox.classList.add('hidden');
-          adminUI.classList.remove('hidden');
-          msg.textContent = 'Unlocked';
-        } else {
-          msg.textContent = 'Wrong password';
-          msg.classList.add('danger');
-        }
+    // Listen for live updates from server
+    socket.on('products', products => {
+      productList.innerHTML = '';
+      products.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'product-item';
+        div.innerHTML = `<strong>${p.title}</strong> — $${p.price.toFixed(2)} | ${p.category}`;
+        productList.appendChild(div);
       });
+    });
 
-      imgInput.addEventListener('change', ()=>{
-        const f = imgInput.files[0];
-        if(!f) return preview.textContent = 'Preview';
-        const reader = new FileReader();
-        reader.onload = ()=>{
-          preview.innerHTML = '';
-          const img = document.createElement('img');
-          img.src = reader.result;
-          img.style.maxWidth = '100%'; img.style.height = '100%'; img.style.objectFit='cover';
-          preview.appendChild(img);
-          preview.dataset.dataurl = reader.result;
-        };
-        reader.readAsDataURL(f);
-      });
+    // Submit form
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const product = {
+        title: document.getElementById('title').value,
+        category: document.getElementById('category').value,
+        price: parseFloat(document.getElementById('price').value),
+        image: document.getElementById('image').value,
+        description: document.getElementById('description').value
+      };
+      // Send product to server
+      socket.emit('addProduct', product);
 
-      function renderList(){
-        listEl.innerHTML = '';
-        products.forEach((p, i)=>{
-          const li = document.createElement('li');
-          li.innerHTML = `<strong>${p.title}</strong> — ${p.category} — $${Number(p.price).toFixed(2)} <button data-i="${i}" class="btn">Remove</button>`;
-          listEl.appendChild(li);
-        });
-        listEl.querySelectorAll('button').forEach(b=>b.addEventListener('click', (e)=>{
-          const i = Number(e.target.dataset.i);
-          products.splice(i,1);
-          renderList();
-        }));
-      }
-
-      addBtn.addEventListener('click', ()=>{
-        const title = document.getElementById('p-title').value.trim();
-        const category = document.getElementById('p-category').value.trim();
-        const price = parseFloat(document.getElementById('p-price').value);
-        const desc = document.getElementById('p-desc').value.trim();
-        const img = preview.dataset.dataurl || '';
-        if(!title || !category || isNaN(price) || !desc){
-          msg.textContent = 'Please fill all fields';
-          return;
-        }
-        const id = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'') + '-' + Date.now();
-        products.push({ id, title, category, price, image: img || 'https://via.placeholder.com/400x300?text='+encodeURIComponent(title), description: desc });
-        renderList();
-        msg.textContent = 'Added';
-      });
-
-      downloadBtn.addEventListener('click', ()=>{
-        if(products.length === 0){ msg.textContent='List is empty'; return; }
-        const blob = new Blob([JSON.stringify(products, null, 2)], {type:'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'products.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-        msg.textContent = 'Downloaded products.json — commit it to your repo under /data/products.json';
-      });
-
-      copyBtn.addEventListener('click', async ()=>{
-        if(products.length === 0){ msg.textContent='List is empty'; return; }
-        try{
-          await navigator.clipboard.writeText(JSON.stringify(products, null, 2));
-          msg.textContent = 'JSON copied to clipboard';
-        }catch(e){ msg.textContent = 'Clipboard failed — you can download instead'; }
-      });
-
-      resetBtn.addEventListener('click', ()=>{ products = []; renderList(); msg.textContent = 'Cleared'; preview.innerHTML='Preview'; delete preview.dataset.dataurl; pForm.reset(); });
-
-      // Publish to GitHub: create/update data/products.json in given repo using a PAT
-      async function publishToGitHub(token, owner, repo, branch, path, data){
-        const api = `https://api.github.com/repos/${owner}/${repo}/contents/${encodeURIComponent(path)}`;
-        const headers = { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json' };
-        // check if file exists to get sha
-        let sha = null;
-        try{
-          const q = await fetch(api + `?ref=${encodeURIComponent(branch)}`, { headers });
-          if(q.ok){
-            const json = await q.json();
-            sha = json.sha;
-          }
-        }catch(e){ /* ignore */ }
-
-        const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
-        const body = { message: 'Update products.json via admin', content, branch };
-        if(sha) body.sha = sha;
-
-        const res = await fetch(api, { method: 'PUT', headers, body: JSON.stringify(body) });
-        return res;
-      }
-
-      const publishBtn = document.getElementById('publish-btn');
-      publishBtn.addEventListener('click', async ()=>{
-        const owner = document.getElementById('gh-owner').value.trim();
-        const repo = document.getElementById('gh-repo').value.trim();
-        const branch = document.getElementById('gh-branch').value.trim() || 'main';
-        const token = document.getElementById('gh-token').value.trim();
-        const status = document.getElementById('publish-status');
-        if(!owner || !repo || !token){ status.textContent = 'Owner, repo and token required'; return; }
-        if(products.length === 0){ status.textContent = 'Product list is empty'; return; }
-        status.textContent = 'Publishing…';
-        publishBtn.disabled = true;
-        try{
-          const res = await publishToGitHub(token, owner, repo, branch, 'data/products.json', products);
-          if(res.ok){ status.textContent = 'Published successfully — check your repo/branch'; }
-          else {
-            const err = await res.json().catch(()=>null);
-            status.textContent = 'Publish failed: ' + (err && err.message ? err.message : res.statusText);
-          }
-        }catch(e){ status.textContent = 'Publish error: ' + e.message; }
-        publishBtn.disabled = false;
-      });
-
-    })();
+      // Clear form for next entry
+      form.reset();
+    });
   </script>
 </body>
 </html>
