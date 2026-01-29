@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Products — Gems & Games</title>
+    <style>
+        :root{
+            --bg:#f7f8fb; --card:#fff; --accent:#6b5bff; --muted:#6b7280;
+            --radius:10px; --shadow:0 6px 18px rgba(20,20,40,.08);
+            font-family:Inter, Roboto, system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+        html,body{height:100%;margin:0;background:var(--bg);color:#111;}
+        header{background:#fff;padding:18px 28px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow);position:sticky;top:0;z-index:10}
+        .brand{display:flex;align-items:center;gap:12px;font-weight:700}
+        .logo{width:40px;height:40px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#45d6a6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
+        nav a{margin-left:18px;color:var(--muted);text-decoration:none;font-weight:600}
+        main{max-width:1100px;margin:28px auto;padding:0 20px}
+        .controls{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+        .search{flex:1;min-width:180px;display:flex;gap:8px}
+        .search input{flex:1;padding:10px 12px;border-radius:10px;border:1px solid #e6e9ef;background:#fff}
+        .filters{display:flex;gap:8px}
+        .btn{background:var(--card);border:1px solid #e6e9ef;padding:9px 12px;border-radius:10px;cursor:pointer}
+        .btn.primary{background:linear-gradient(90deg,var(--accent),#45d6a6);color:#fff;border:0}
+        .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+        .card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+        .thumb{height:160px;border-radius:8px;background:#f1f4ff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+        .thumb img{width:100%;height:100%;object-fit:cover}
+        .meta{display:flex;justify-content:space-between;align-items:center;gap:8px}
+        .title{font-weight:700;font-size:15px}
+        .cat{font-size:12px;color:var(--muted)}
+        .price{font-weight:800;color:var(--accent)}
+        .actions{display:flex;gap:8px;margin-top:auto}
+        .muted{color:var(--muted);font-size:13px}
+        footer{max-width:1100px;margin:28px auto;padding:18px 20px;color:var(--muted);font-size:13px}
+        @media (max-width:520px){
+            .thumb{height:140px}
+            header{padding:12px}
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <div class="logo">G&G</div>
+            <div>
+                <div style="font-size:15px">Gems & Games</div>
+                <div style="font-size:12px;color:var(--muted);margin-top:2px">Curated finds for players & collectors</div>
+            </div>
+        </div>
+        <nav aria-label="Main navigation">
+            <a href="/">Home</a>
+            <a href="/products.html" aria-current="page">Products</a>
+            <a href="/about.html">About</a>
+            <a href="/contact.html">Contact</a>
+        </nav>
+    </header>
+
+    <main>
+        <section aria-label="Products header" style="margin-bottom:10px">
+            <h1 style="margin:0 0 8px 0">Products</h1>
+            <p class="muted" style="margin:0 0 14px 0">Browse gems and games — filter, search, and add to cart.</p>
+        </section>
+
+        <section class="controls" aria-label="Controls">
+            <div class="search" role="search">
+                <input id="q" type="search" placeholder="Search products, tags, materials..." />
+                <button id="clear" class="btn" title="Clear search">Clear</button>
+            </div>
+            <div class="filters" role="toolbar" aria-label="Filters">
+                <button class="btn" data-cat="all">All</button>
+                <button class="btn" data-cat="gems">Gems</button>
+                <button class="btn" data-cat="games">Games</button>
+                <button class="btn primary" id="sortPrice">Sort: Price ↑</button>
+            </div>
+        </section>
+
+        <section class="grid" id="products" aria-live="polite">
+            <!-- Product template items -->
+            <article class="card" data-title="Amethyst Cluster" data-category="gems" data-price="42.00">
+                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Amethyst" alt="Amethyst cluster" /></div>
+                <div class="meta">
+                    <div>
+                        <div class="title">Amethyst Cluster</div>
+                        <div class="cat">Gems • Natural</div>
+                    </div>
+                    <div class="price">$42.00</div>
+                </div>
+                <div class="muted">Hand-selected piece, great for display and energy work.</div>
+                <div class="actions">
+                    <button class="btn">Details</button>
+                    <button class="btn primary">Add to cart</button>
+                </div>
+            </article>
+
+            <article class="card" data-title="Crystal Dice Set" data-category="games" data-price="29.00">
+                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Dice+Set" alt="Crystal dice set" /></div>
+                <div class="meta">
+                    <div>
+                        <div class="title">Crystal Dice Set</div>
+                        <div class="cat">Games • Accessories</div>
+                    </div>
+                    <div class="price">$29.00</div>
+                </div>
+                <div class="muted">7-piece polyhedral set with shimmer finish.</div>
+                <div class="actions">
+                    <button class="btn">Details</button>
+                    <button class="btn primary">Add to cart</button>
+                </div>
+            </article>
+
+            <article class="card" data-title="Fluorite Tower" data-category="gems" data-price="58.00">
+                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Fluorite" alt="Fluorite tower" /></div>
+                <div class="meta">
+                    <div>
+                        <div class="title">Fluorite Tower</div>
+                        <div class="cat">Gems • Carved</div>
+                    </div>
+                    <div class="price">$58.00</div>
+                </div>
+                <div class="muted">Polished tower ideal for desks and shelves.</div>
+                <div class="actions">
+                    <button class="btn">Details</button>
+                    <button class="btn primary">Add to cart</button>
+                </div>
+            </article>
+
+            <article class="card" data-title="Handcrafted Board Game" data-category="games" data-price="85.00">
+                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Board+Game" alt="Handcrafted board game" /></div>
+                <div class="meta">
+                    <div>
+                        <div class="title">Handcrafted Board Game</div>
+                        <div class="cat">Games • Tabletop</div>
+                    </div>
+                    <div class="price">$85.00</div>
+                </div>
+                <div class="muted">Limited-run strategy game with wooden pieces.</div>
+                <div class="actions">
+                    <button class="btn">Details</button>
+                    <button class="btn primary">Add to cart</button>
+                </div>
+            </article>
+
+            <article class="card" data-title="Rose Quartz Heart" data-category="gems" data-price="18.00">
+                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Rose+Quartz" alt="Rose quartz heart" /></div>
+                <div class="meta">
+                    <div>
+                        <div class="title">Rose Quartz Heart</div>
+                        <div class="cat">Gems • Tumbled</div>
+                    </div>
+                    <div class="price">$18.00</div>
+                </div>
+                <div class="muted">Small palm stone for gifting.</div>
+                <div class="actions">
+                    <button class="btn">Details</button>
+                    <button class="btn primary">Add to cart</button>
+                </div>
+            </article>
+
+            <article class="card" data-title="Collector's Card Pack" data-category="games" data-price="12.00">
+                <div class="thumb"><img src="https://via.placeholder.com/400x300?text=Card+Pack" alt="Collector's card pack" /></div>
+                <div class="meta">
+                    <div>
+                        <div class="title">Collector's Card Pack</div>
+                        <div class="cat">Games • Cards</div>
+                    </div>
+                    <div class="price">$12.00</div>
+                </div>
+                <div class="muted">Random rare card guaranteed in every pack.</div>
+                <div class="actions">
+                    <button class="btn">Details</button>
+                    <button class="btn primary">Add to cart</button>
+                </div>
+            </article>
+        </section>
+    </main>
+
+    <footer>
+        © <span id="year"></span> Gems & Games — Small-batch treasures for players & collectors.
+    </footer>
+
+    <script>
+        // Minimal interactive behavior: search, category filter, sort
+        const qs = s => document.querySelector(s);
+        const qInput = qs('#q');
+        const clearBtn = qs('#clear');
+        const grid = qs('#products');
+        const items = Array.from(grid.querySelectorAll('.card'));
+        let sortAsc = true;
+
+        function renderFilter(){
+            const q = qInput.value.trim().toLowerCase();
+            items.forEach(card=>{
+                const title = card.dataset.title.toLowerCase();
+                const cat = card.dataset.category.toLowerCase();
+                const matchesQ = !q || title.includes(q) || card.querySelector('.muted').textContent.toLowerCase().includes(q);
+                const catFilter = grid.dataset.catFilter || 'all';
+                const matchesCat = catFilter === 'all' || cat === catFilter;
+                card.style.display = (matchesQ && matchesCat) ? '' : 'none';
+            });
+        }
+
+        // Category buttons
+        document.querySelectorAll('[data-cat]').forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+                document.querySelectorAll('[data-cat]').forEach(b=>b.classList.remove('primary'));
+                btn.classList.add('primary');
+                grid.dataset.catFilter = btn.dataset.cat;
+                renderFilter();
+            });
+        });
+
+        // Search and clear
+        qInput.addEventListener('input', renderFilter);
+        clearBtn.addEventListener('click', ()=>{ qInput.value=''; renderFilter(); qInput.focus(); });
+
+        // Sort by price
+        qs('#sortPrice').addEventListener('click', (e)=>{
+            sortAsc = !sortAsc;
+            const sorted = items.slice().sort((a,b)=>{
+                return sortAsc ? (parseFloat(a.dataset.price)-parseFloat(b.dataset.price)) : (parseFloat(b.dataset.price)-parseFloat(a.dataset.price));
+            });
+            sorted.forEach(node => grid.appendChild(node));
+            e.target.textContent = `Sort: Price ${sortAsc ? '↑' : '↓'}`;
+        });
+
+        // Year
+        qs('#year').textContent = new Date().getFullYear();
+
+        // Init defaults
+        qs('[data-cat="all"]').classList.add('primary');
+        grid.dataset.catFilter = 'all';
+    </script>
+</body>
+</html>
