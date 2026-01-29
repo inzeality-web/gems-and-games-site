@@ -1,50 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Admin - Gems & Games</title>
   <link rel="stylesheet" href="styles.css">
-  <script src="/socket.io/socket.io.js"></script>
-  
-  </footer>
-  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-  <script src="scripts/live-products.js"></script>
-</html>
+  <style>
+    body.admin-page .admin-panel{max-width:980px;margin:24px auto;padding:20px;background:rgba(255,255,255,0.02);border-radius:8px}
+    .admin-lock{display:flex;gap:8px;align-items:center;margin:24px auto;max-width:420px}
+    .admin-lock input{flex:1;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.08)}
+    .admin-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    .product-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .product-form .full{grid-column:1/-1}
+    #productList{margin-top:12px}
+    .product-item{padding:8px;border-radius:6px;background:rgba(0,0,0,0.08);margin-bottom:8px}
+  </style>
+</head>
+<body class="admin-page">
+  <header class="site-header">
+    <div class="container">
+      <h1>Admin</h1>
+      <nav class="nav"><a href="/">Home</a> · <a href="products.html">Products</a></nav>
+    </div>
+  </header>
+
+  <main class="container admin-panel">
+    <section id="lockSection">
+      <div class="admin-lock">
+        <input id="adminPassword" type="password" placeholder="Enter admin password" aria-label="Admin password">
+        <button id="unlockBtn" class="btn">Unlock</button>
+        <button id="showPwd" class="btn">Show</button>
+      </div>
+      <div class="muted">This password is client-side only. It's a convenience for local editing.</div>
+    </section>
+
+    <section id="panel" style="display:none">
+      <h2>Products</h2>
+
+      <form id="productForm" class="product-form" autocomplete="off">
+        <label class="full">Title<input id="title" name="title" required></label>
+        <label>Category<input id="category" name="category" value="stones"></label>
+        <label>Price<input id="price" name="price" type="number" step="0.01" value="0.00"></label>
+        <label class="full">Image URL<input id="image" name="image" placeholder="images/placeholder-photo.svg"></label>
+        <label class="full">Description<textarea id="description" name="description" rows="3"></textarea></label>
+        <div class="full admin-actions">
+          <button id="addBtn" class="btn primary" type="submit">Add Product</button>
+          <button id="downloadBtn" type="button" class="btn">Download JSON</button>
+          <button id="copyBtn" type="button" class="btn">Copy JSON</button>
+          <button id="clearBtn" type="button" class="btn">Clear All</button>
+        </div>
+      </form>
+
+      <div id="productList" aria-live="polite"></div>
+    </section>
   </main>
 
+  <footer class="site-footer">
+    <div class="container muted">Admin panel — edits are local until you publish.</div>
+  </footer>
+
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="scripts/live-products.js"></script>
+
   <script>
-    const socket = io(); // connect to your Express + Socket.IO server
-    const form = document.getElementById('productForm');
-    const productList = document.getElementById('productList');
+    (function(){
+      // Simple client-side password (change here if desired)
+      const ADMIN_PASSWORD = 'hunter2';
 
-    // Listen for live updates from server
-    socket.on('products', products => {
-      productList.innerHTML = '';
-      products.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'product-item';
-        div.innerHTML = `<strong>${p.title}</strong> — $${p.price.toFixed(2)} | ${p.category}`;
-        productList.appendChild(div);
+      const unlockBtn = document.getElementById('unlockBtn');
+      const showBtn = document.getElementById('showPwd');
+      const pwdInput = document.getElementById('adminPassword');
+      const panel = document.getElementById('panel');
+      const lockSection = document.getElementById('lockSection');
+
+      const socket = (typeof io === 'function') ? io() : null;
+
+      let products = [];
+
+      // Elements
+      const form = document.getElementById('productForm');
+      const productList = document.getElementById('productList');
+      const downloadBtn = document.getElementById('downloadBtn');
+      const copyBtn = document.getElementById('copyBtn');
+      const clearBtn = document.getElementById('clearBtn');
+
+      function renderProducts(){
+        productList.innerHTML = '';
+        products.forEach((p, i)=>{
+          const d = document.createElement('div');
+          d.className = 'product-item';
+          d.innerHTML = `<strong>${escapeHtml(p.title)}</strong> — $${Number(p.price).toFixed(2)} <span class="muted">| ${escapeHtml(p.category)}</span>
+            <div class="muted">${escapeHtml(p.description || '')}</div>
+            <div style="margin-top:6px"><button data-i="${i}" class="btn small remove">Remove</button></div>`;
+          productList.appendChild(d);
+        });
+      }
+
+      function escapeHtml(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+      // fetch existing data/products.json if available
+      fetch('data/products.json').then(r=>{ if(r.ok) return r.json(); throw new Error('no data'); }).then(j=>{ products = Array.isArray(j)? j : []; renderProducts(); }).catch(()=>{});
+
+      // Socket updates (shared live-products script also listens, but ensure admin list updates)
+      if(socket){
+        socket.on('products', list => { products = Array.isArray(list)? list : []; renderProducts(); });
+      }
+
+      // Unlock behavior
+      unlockBtn.addEventListener('click', ()=>{
+        if(pwdInput.value === ADMIN_PASSWORD){
+          panel.style.display = '';
+          lockSection.style.display = 'none';
+          renderProducts();
+        } else {
+          alert('Incorrect password');
+        }
       });
-    });
 
-    // Submit form
-    form.addEventListener('submit', e => {
-      e.preventDefault();
-      const product = {
-        title: document.getElementById('title').value,
-        category: document.getElementById('category').value,
-        price: parseFloat(document.getElementById('price').value),
-        image: document.getElementById('image').value,
-        description: document.getElementById('description').value
-      };
-      // Send product to server
-      socket.emit('addProduct', product);
+      showBtn.addEventListener('click', ()=>{
+        pwdInput.type = pwdInput.type === 'password' ? 'text' : 'password';
+        showBtn.textContent = pwdInput.type === 'password' ? 'Show' : 'Hide';
+      });
 
-      // Clear form for next entry
-      form.reset();
-    });
+      // Add product
+      form.addEventListener('submit', e=>{
+        e.preventDefault();
+        const p = {
+          title: document.getElementById('title').value.trim() || 'Untitled',
+          category: document.getElementById('category').value.trim() || 'misc',
+          price: Number(document.getElementById('price').value) || 0,
+          image: document.getElementById('image').value.trim() || 'images/placeholder-photo.svg',
+          description: document.getElementById('description').value.trim() || ''
+        };
+        products.unshift(p);
+        renderProducts();
+        // notify server/clients
+        if(socket) socket.emit('addProduct', p);
+        form.reset();
+      });
+
+      // remove handler
+      productList.addEventListener('click', e=>{
+        if(e.target.classList.contains('remove')){
+          const i = Number(e.target.getAttribute('data-i'));
+          if(!Number.isNaN(i)){
+            products.splice(i,1);
+            renderProducts();
+            if(socket) socket.emit('products', products);
+          }
+        }
+      });
+
+      // download JSON
+      downloadBtn.addEventListener('click', ()=>{
+        const blob = new Blob([JSON.stringify(products, null, 2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'products.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      });
+
+      // copy JSON
+      copyBtn.addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(JSON.stringify(products, null, 2));
+          alert('Copied to clipboard');
+        }catch(err){ alert('Copy failed'); }
+      });
+
+      // clear
+      clearBtn.addEventListener('click', ()=>{
+        if(confirm('Clear all products from this admin session?')){
+          products = [];
+          renderProducts();
+          if(socket) socket.emit('products', products);
+        }
+      });
+
+    })();
   </script>
 </body>
 </html>
