@@ -39,7 +39,14 @@
 
       <form id="productForm" class="product-form" autocomplete="off">
         <label class="full">Title<input id="title" name="title" required></label>
-        <label>Category<input id="category" name="category" value="stones"></label>
+        <label>Category
+          <select id="category" name="category">
+            <option value="gems">Gems</option>
+            <option value="games">Games</option>
+            <option value="accessories">Accessories</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
         <label>Price<input id="price" name="price" type="number" step="0.01" value="0.00"></label>
         <label class="full">Image File<input id="imageFile" name="imageFile" type="file" accept="image/*"></label>
         <div class="full"><img id="imagePreview" alt="Preview" style="max-height:80px;display:block;margin-top:6px"></div>
